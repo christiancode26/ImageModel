@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Christian Rodrigues | Image Classifier</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+  <style>
+    :root {
+      --brand: #6c63ff;
+      --brand-dark: #4b44cc;
+      --surface: #f8f7ff;
+      --card-bg: #ffffff;
+      --text-muted-custom: #6b7280;
+    }
+
+    body {
+      background: var(--surface);
+      min-height: 100vh;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+    }
+
+    .navbar-brand span {
+      color: var(--brand);
+      font-weight: 700;
+    }
+
+    .hero-card {
+      background: var(--card-bg);
+      border-radius: 1.25rem;
+      border: 1px solid #e5e3ff;
+      box-shadow: 0 4px 32px rgba(108, 99, 255, 0.08);
+    }
+
+    #webcam-wrapper {
+      position: relative;
+      display: inline-block;
+      border-radius: 1rem;
+      overflow: hidden;
+      border: 3px solid var(--brand);
+      background: #1a1a2e;
+      width: 100%;
+      max-width: 320px;
+    }
+
+    #webcam-wrapper canvas,
+    #webcam-wrapper video {
+      display: block;
+      width: 100% !important;
+      height: auto !important;
+      border-radius: 0.75rem;
+    }
+
+    .status-badge {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background: rgba(0,0,0,0.55);
+      color: #fff;
+      font-size: 0.72rem;
+      padding: 3px 10px;
+      border-radius: 999px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      backdrop-filter: blur(4px);
+    }
+
+    .dot-live {
+      width: 7px;
+      height: 7px;
+      background: #22c55e;
+      border-radius: 50%;
+      animation: pulse-dot 1.2s infinite;
+    }
+
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(0.75); }
+    }
+
+    .btn-start {
+      background: var(--brand);
+      border: none;
+      color: #fff;
+      border-radius: 999px;
+      padding: 0.65rem 2rem;
+      font-size: 1rem;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+      box-shadow: 0 4px 18px rgba(108, 99, 255, 0.28);
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .btn-start:hover {
+      background: var(--brand-dark);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 24px rgba(108, 99, 255, 0.38);
+    }
+
+    .btn-start:active {
+      transform: scale(0.97);
+    }
+
+    .btn-start:disabled {
+      background: #a5a2d4;
+      box-shadow: none;
+      cursor: not-allowed;
+    }
+
+    .label-card {
+      background: #fafafe;
+      border: 1px solid #e5e3ff;
+      border-radius: 0.85rem;
+      padding: 0.9rem 1.1rem;
+      transition: box-shadow 0.2s;
+    }
+
+    .label-card:hover {
+      box-shadow: 0 2px 12px rgba(108, 99, 255, 0.10);
+    }
+
+    .class-name {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: #2d2d5e;
+    }
+
+    .class-pct {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--brand);
+      min-width: 42px;
+      text-align: right;
+    }
+
+    .progress {
+      height: 10px;
+      border-radius: 999px;
+      background: #ece9ff;
+    }
+
+    .progress-bar {
+      background: linear-gradient(90deg, var(--brand), #a78bfa);
+      border-radius: 999px;
+      transition: width 0.35s ease;
+    }
+
+    .progress-bar.top {
+      background: linear-gradient(90deg, #22c55e, #4ade80);
+    }
+
+    .placeholder-box {
+      background: #1a1a2e;
+      border-radius: 0.75rem;
+      width: 100%;
+      max-width: 320px;
+      aspect-ratio: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: #6b7aaa;
+      gap: 0.5rem;
+    }
+
+    .placeholder-box i {
+      font-size: 3rem;
+      color: #4b44cc;
+      opacity: 0.6;
+    }
+
+    footer {
+      font-size: 0.82rem;
+      color: var(--text-muted-custom);
+    }
+
+    @media (max-width: 576px) {
+      .hero-card { padding: 1.25rem !important; }
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="navbar navbar-light bg-white border-bottom shadow-sm px-3 py-2">
+    <div class="container-fluid">
+      <a class="navbar-brand d-flex align-items-center gap-2 text-dark text-decoration-none" href="#">
+        <i class="bi bi-cpu fs-5 text-primary"></i>
+        <span>Christian Rodrigues</span>
+      </a>
+      <span class="badge rounded-pill text-bg-light border" style="font-size:0.75rem; color:#6c63ff;">
+        <i class="bi bi-diagram-3 me-1"></i>Teachable Machine
+      </span>
+    </div>
+  </nav>
+
+  <main class="container py-4 py-md-5">
+    <div class="row justify-content-center g-4">
+
+      <div class="col-12 col-lg-10">
+        <div class="hero-card p-4 p-md-5">
+
+          <div class="text-center mb-4">
+            <h1 class="fw-bold fs-3 mb-1" style="color:#2d2d5e;">Classificador de Imagens</h1>
+            <p class="text-muted mb-0" style="font-size:0.95rem;">
+              Utilize sua câmera para identificar classes em tempo real com IA.
+            </p>
+          </div>
+
+          <div class="row g-4 align-items-start">
+
+            <div class="col-12 col-md-5 d-flex flex-column align-items-center gap-3">
+              <div id="webcam-container" class="d-flex justify-content-center w-100">
+                <div class="placeholder-box" id="placeholder">
+                  <i class="bi bi-camera-video-off"></i>
+                  <span style="font-size:0.85rem;">Câmera desativada</span>
+                </div>
+              </div>
+
+              <button class="btn-start" onclick="init()" id="btn-start">
+                <i class="bi bi-camera-video-fill"></i>
+                Ativar Câmera e Iniciar
+              </button>
+
+              <p class="text-muted text-center mb-0" style="font-size:0.78rem; max-width:260px;">
+                <i class="bi bi-shield-lock me-1"></i>
+                O acesso à câmera é feito localmente. Nenhuma imagem é enviada a servidores.
+              </p>
+            </div>
+
+            <div class="col-12 col-md-7">
+              <div class="mb-3 d-flex align-items-center gap-2">
+                <i class="bi bi-bar-chart-line text-primary"></i>
+                <span class="fw-semibold" style="color:#2d2d5e; font-size:0.95rem;">Resultados da Classificação</span>
+              </div>
+
+              <div id="label-container" class="d-flex flex-column gap-2">
+                <div class="text-muted text-center py-5" id="no-results" style="font-size:0.88rem;">
+                  <i class="bi bi-hourglass d-block fs-3 mb-2" style="color:#c4bfff;"></i>
+                  Inicie a câmera para ver os resultados aqui.
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <footer class="text-center pb-4">
+    <span>Desenvolvido por <strong>Christian Rodrigues</strong> &mdash; powered by Teachable Machine &amp; TensorFlow.js</span>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
+  <script>
+    const URL = "https://teachablemachine.withgoogle.com/models/n2dx-3dSc/";
+    let model, webcam, labelContainer, maxPredictions;
+    let bars = [];
+
+    async function init() {
+      const btn = document.getElementById('btn-start');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Carregando modelo…';
+
+      try {
+        model = await tmImage.load(URL + "model.json", URL + "metadata.json");
+        maxPredictions = model.getTotalClasses();
+
+        webcam = new tmImage.Webcam(320, 320, true);
+        await webcam.setup();
+        await webcam.play();
+
+        const placeholder = document.getElementById('placeholder');
+        if (placeholder) placeholder.remove();
+
+        const wrapper = document.createElement('div');
+        wrapper.id = 'webcam-wrapper';
+
+        const badge = document.createElement('div');
+        badge.className = 'status-badge';
+        badge.innerHTML = '<div class="dot-live"></div> AO VIVO';
+
+        wrapper.appendChild(webcam.canvas);
+        wrapper.appendChild(badge);
+
+        const container = document.getElementById('webcam-container');
+        container.appendChild(wrapper);
+
+        const noResults = document.getElementById('no-results');
+        if (noResults) noResults.remove();
+
+        labelContainer = document.getElementById('label-container');
+        bars = [];
+
+        for (let i = 0; i < maxPredictions; i++) {
+          const card = document.createElement('div');
+          card.className = 'label-card';
+
+          const header = document.createElement('div');
+          header.className = 'd-flex justify-content-between align-items-center mb-2';
+
+          const nameEl = document.createElement('span');
+          nameEl.className = 'class-name';
+          nameEl.textContent = '—';
+
+          const pctEl = document.createElement('span');
+          pctEl.className = 'class-pct';
+          pctEl.textContent = '0%';
+
+          header.appendChild(nameEl);
+          header.appendChild(pctEl);
+
+          const progressWrap = document.createElement('div');
+          progressWrap.className = 'progress';
+
+          const bar = document.createElement('div');
+          bar.className = 'progress-bar';
+          bar.style.width = '0%';
+          bar.setAttribute('role', 'progressbar');
+
+          progressWrap.appendChild(bar);
+          card.appendChild(header);
+          card.appendChild(progressWrap);
+          labelContainer.appendChild(card);
+
+          bars.push({ nameEl, pctEl, bar });
+        }
+
+        btn.innerHTML = '<i class="bi bi-camera-video-fill"></i> Câmera Ativa';
+        btn.style.background = '#22c55e';
+        btn.style.boxShadow = '0 4px 18px rgba(34,197,94,0.3)';
+
+        window.requestAnimationFrame(loop);
+      } catch (err) {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-camera-video-fill"></i> Ativar Câmera e Iniciar';
+        alert('Erro ao iniciar a câmera ou carregar o modelo. Verifique as permissões e tente novamente.\n\n' + err.message);
+      }
+    }
+
+    async function loop() {
+      webcam.update();
+      await predict();
+      window.requestAnimationFrame(loop);
+    }
+
+    async function predict() {
+      const prediction = await model.predict(webcam.canvas);
+
+      let maxIdx = 0;
+      for (let i = 1; i < prediction.length; i++) {
+        if (prediction[i].probability > prediction[maxIdx].probability) maxIdx = i;
+      }
+
+      for (let i = 0; i < maxPredictions; i++) {
+        const pct = (prediction[i].probability * 100).toFixed(1);
+        bars[i].nameEl.textContent = prediction[i].className;
+        bars[i].pctEl.textContent = pct + '%';
+        bars[i].bar.style.width = pct + '%';
+        bars[i].bar.className = 'progress-bar' + (i === maxIdx ? ' top' : '');
+      }
+    }
+  </script>
+</body>
+</html>
