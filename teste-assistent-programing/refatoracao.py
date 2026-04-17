@@ -1,20 +1,22 @@
-def c(l):
-    t=0
-    for i in range(len(l)):
-        t=t+l[i]
-    m=t/len(l)
-    mx=l[0]
-    mn=l[0]
-    for i in range(len(l)):
-        if l[i]>mx:
-            mx=l[i]
-        if l[i]<mn:
-            mn=l[i]
-    return t,m,mx,mn
+def calculate_statistics(values):
+    """
+    Calculate total, average, maximum, and minimum of a list of numbers.
 
-x=[23,7,45,2,67,12,89,34,56,11]
-a,b,c2,d=c(x)
-print("total:",a)
-print("media:",b)
-print("maior:",c2)
-print("menor:",d)
+    Args:
+        values (list): List of numeric values.
+
+    Returns:
+        tuple: (total, average, maximum, minimum)
+    """
+    total = sum(values)
+    average = total / len(values)
+    maximum = max(values)
+    minimum = min(values)
+    return total, average, maximum, minimum
+
+numbers = [23, 7, 45, 2, 67, 12, 89, 34, 56, 11]
+total_sum, mean, max_value, min_value = calculate_statistics(numbers)
+print("Total:", total_sum)
+print("Média:", mean)
+print("Maior:", max_value)
+print("Menor:", min_value)
